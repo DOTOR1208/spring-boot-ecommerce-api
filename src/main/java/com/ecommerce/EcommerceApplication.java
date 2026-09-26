@@ -1,13 +1,13 @@
-package my_app.ecomercial_api;
+package com.ecommerce;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class EcomercialApiApplication {
+public class EcommerceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(EcomercialApiApplication.class, args);
+		SpringApplication.run(EcommerceApplication.class, args);
 	}
 
 }
