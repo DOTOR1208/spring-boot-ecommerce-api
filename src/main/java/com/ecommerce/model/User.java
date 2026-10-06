@@ -3,7 +3,6 @@ package com.ecommerce.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,6 +14,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.CascadeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,32 +23,32 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class User {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-	private String name;
-    
+    private String name;
+
     @Column(nullable = false, unique = true)
     private String userName;
-    
+
     @Column(nullable = false)
     private String password;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
 
-	@Column(columnDefinition = " bit default 0")
-	private boolean deleted;
-    
-	public boolean getDeleted() {
-		return this.deleted;
-	}
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
@@ -55,11 +56,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     @Builder.Default
     private List<Orders> orders = new ArrayList<>();
-    
-	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	@JoinTable(name = "role_user", 
-		joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), 
-		inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
-	@Builder.Default
-	private List<Role> roles = new ArrayList<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "role_user",
+        joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
+    @Builder.Default
+    private List<Role> roles = new ArrayList<>();
 }
