@@ -6,6 +6,9 @@ public enum ErrorCode {
     INVALID,
     MAX,
     MIN,
-    INTERNAL_SERVER,
-    ALREADY_EXIST
+    ALREADY_EXIST,
+    UNAUTHORIZED,
+    FORBIDDEN,
+    METHOD_NOT_ALLOWED,
+    INTERNAL_SERVER
 }

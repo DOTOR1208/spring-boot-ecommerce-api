@@ -5,6 +5,8 @@ import java.util.Collection;
 
 import org.springframework.data.domain.Page;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SuccessResponse<T> {
 
     @Builder.Default
@@ -24,7 +27,9 @@ public class SuccessResponse<T> {
     @Builder.Default
     private String message = "success";
 
-    private ErrorCode code;
+    @Builder.Default
+    private ErrorCode code = ErrorCode.OK;
+
     private T data;
 
     @Builder.Default
@@ -33,29 +38,34 @@ public class SuccessResponse<T> {
     private int size;
     private int page;
 
+    private Integer totalPages;
+    private Long totalElements;
+
     public static <T> SuccessResponse<T> of(final T data) {
-        return SuccessResponse.<T>builder()
+        SuccessResponseBuilder<T> builder = SuccessResponse.<T>builder()
                 .data(data)
-                .code(ErrorCode.OK)
-                .size(getSize(data))
-                .build();
+                .code(ErrorCode.OK);
+
+        if (data instanceof Page<?>) {
+            Page<?> pageData = (Page<?>) data;
+            builder.size(pageData.getNumberOfElements())
+                   .page(pageData.getNumber())
+                   .totalPages(pageData.getTotalPages())
+                   .totalElements(pageData.getTotalElements());
+        } else if (data instanceof Collection<?>) {
+            builder.size(((Collection<?>) data).size())
+                   .page(0);
+        } else {
+            builder.size(data != null ? 1 : 0)
+                   .page(0);
+        }
+
+        return builder.build();
     }
 
     public static <T> SuccessResponse<T> of(final T data, final int page) {
-        return SuccessResponse.<T>builder()
-                .data(data)
-                .code(ErrorCode.OK)
-                .size(getSize(data))
-                .page(page)
-                .build();
-    }
-
-    private static <T> int getSize(final T data) {
-        if (data instanceof Collection<?>) {
-            return ((Collection<?>) data).size();
-        } else if (data instanceof Page<?>) {
-            return ((Page<?>) data).getNumberOfElements();
-        }
-        return data != null ? 1 : 0;
+        SuccessResponse<T> response = of(data);
+        response.setPage(page);
+        return response;
     }
 }
