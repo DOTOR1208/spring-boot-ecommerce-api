@@ -1,19 +1,20 @@
 package com.ecommerce.mapper;
 
-import java.util.List;
-
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
 import com.ecommerce.dto.request.ProductRequestDto;
 import com.ecommerce.dto.response.ProductResponseDto;
 import com.ecommerce.model.Product;
 
-@Mapper(componentModel = "spring")
-public interface ProductMapper {
+import java.util.List;
 
-    ProductMapper INSTANCE = Mappers.getMapper(ProductMapper.class);
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ProductMapper {
 
     @Mapping(target = "id", ignore = true)
     Product toModel(ProductRequestDto dto);
@@ -21,4 +22,8 @@ public interface ProductMapper {
     ProductResponseDto toDTO(Product product);
 
     List<ProductResponseDto> toDTOs(List<Product> products);
+
+    @Mapping(target = "id", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntityFromDto(ProductRequestDto dto, @MappingTarget Product product);
 }
