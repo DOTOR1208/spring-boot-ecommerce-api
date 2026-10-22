@@ -69,8 +69,8 @@ public class SecurityConfiguration {
 
         http.authorizeHttpRequests(auths -> auths
                 .requestMatchers(WHITE_LIST).permitAll()
-                .requestMatchers("/user").hasAnyAuthority("USER")
-                .requestMatchers("/admin").hasAnyAuthority("ADMIN")
+                .requestMatchers("/user/**").hasRole("USER")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
         )
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -39,19 +39,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token)) {
             try {
-                if (!this.jwtUtils.isTokenExpired(token)) {
-                    String username = this.jwtUtils.extractUsername(token);
+                String username = this.jwtUtils.extractUsername(token);
 
-                    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-                        if (this.jwtUtils.validateToken(token, userDetails)) {
-                            UsernamePasswordAuthenticationToken authenticationToken =
-                                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    if (this.jwtUtils.validateToken(token, userDetails)) {
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                        }
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                     }
                 }
             } catch (Exception ex) {

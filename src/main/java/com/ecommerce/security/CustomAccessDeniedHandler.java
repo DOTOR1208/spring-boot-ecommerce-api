@@ -11,7 +11,6 @@ import com.ecommerce.response.ErrorCode;
 import com.ecommerce.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +25,10 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(
             HttpServletRequest request,
             HttpServletResponse response,
-            AccessDeniedException accessDeniedException) throws IOException, ServletException {
+            AccessDeniedException accessDeniedException) throws IOException {
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
         ErrorResponse errorResponse = ErrorResponse.of(

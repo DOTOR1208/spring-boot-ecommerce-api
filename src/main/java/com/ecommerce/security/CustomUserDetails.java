@@ -32,7 +32,15 @@ public class CustomUserDetails implements UserDetails {
         this.userName = user.getUserName();
         this.password = user.getPassword();
         this.authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .flatMap(role -> {
+                    String roleName = role.getName();
+                    String prefixed = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                    String bare = roleName.startsWith("ROLE_") ? roleName.substring(5) : roleName;
+                    return java.util.stream.Stream.of(
+                            new SimpleGrantedAuthority(prefixed),
+                            new SimpleGrantedAuthority(bare)
+                    );
+                })
                 .collect(Collectors.toSet());
         this.roles = user.getRoles().stream().collect(Collectors.toSet());
         this.deleted = user.isDeleted();
