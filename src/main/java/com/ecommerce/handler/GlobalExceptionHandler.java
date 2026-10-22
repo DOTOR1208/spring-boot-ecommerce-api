@@ -6,6 +6,10 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.BaseException;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.exception.UserAlreadyExistException;
@@ -131,11 +136,35 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Rethrows Spring Security AccessDeniedException to let Security filter chain handle 403
+     * Handles Spring Security AccessDeniedException at controller / method level (@PreAuthorize)
      */
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(AccessDeniedException.class)
-    public void handleAccessDenied(final AccessDeniedException exception) {
-        throw exception;
+    public ErrorResponse handleAccessDenied(final AccessDeniedException exception) {
+        log.warn("Access denied at controller level: {}", exception.getMessage());
+        return ErrorResponse.of(
+                ErrorCode.FORBIDDEN,
+                "auth",
+                "Access denied. You do not have permission to access this resource."
+        );
+    }
+
+    /**
+     * Handles authentication failures (wrong password, disabled or locked account)
+     */
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            DisabledException.class,
+            LockedException.class,
+            AuthenticationException.class
+    })
+    public ErrorResponse handleAuthenticationException(final AuthenticationException exception) {
+        log.warn("Authentication failed: {}", exception.getMessage());
+        String message = exception instanceof BadCredentialsException
+                ? "Invalid username or password"
+                : exception.getMessage();
+        return ErrorResponse.of(ErrorCode.UNAUTHORIZED, "auth", message);
     }
 
     /**
