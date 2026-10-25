@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.ecommerce.dto.request.UserRequestDto;
 import com.ecommerce.dto.response.UserResponseDto;
+import com.ecommerce.model.User;
 
 public interface UserService {
 
@@ -17,6 +18,8 @@ public interface UserService {
     UserResponseDto getUserById(Integer id);
 
     UserResponseDto getUserByUsername(String username);
+
+    User getUserEntityByUsername(String username);
 
     UserResponseDto updateUser(Integer id, UserRequestDto request);
 

@@ -65,6 +65,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User getUserEntityByUsername(final String username) {
+        log.info("Fetching user entity by username: {}", username);
+        return this.userRepository.findByUserName(username)
+                .filter(u -> !u.isDeleted())
+                .orElseThrow(() -> new UserNotFoundException(String.format("User not found with username: %s", username)));
+    }
+
+    @Override
     @Transactional
     public UserResponseDto updateUser(final Integer id, final UserRequestDto request) {
         log.info("Updating user with ID: {}", id);

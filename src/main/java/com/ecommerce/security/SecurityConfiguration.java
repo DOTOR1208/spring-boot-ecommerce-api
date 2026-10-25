@@ -3,6 +3,7 @@ package com.ecommerce.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -69,6 +70,7 @@ public class SecurityConfiguration {
 
         http.authorizeHttpRequests(auths -> auths
                 .requestMatchers(WHITE_LIST).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers("/user/**").hasRole("USER")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
