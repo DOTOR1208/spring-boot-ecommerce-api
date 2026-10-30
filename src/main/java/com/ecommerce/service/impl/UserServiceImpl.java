@@ -74,6 +74,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponseDto updateCurrentUser(final String username, final UserRequestDto request) {
+        log.info("Updating current user profile for username: '{}'", username);
+        User user = getUserEntityByUsername(username);
+        return updateUser(user.getId(), request);
+    }
+
+    @Override
+    @Transactional
     public UserResponseDto updateUser(final Integer id, final UserRequestDto request) {
         log.info("Updating user with ID: {}", id);
 

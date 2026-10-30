@@ -1,169 +1,139 @@
-# 🛒 E-Commerce RESTful API Backend
+# Spring Boot E-Commerce REST API
 
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.x-green.svg)](https://spring.io/projects/spring-security)
-[![JWT](https://img.shields.io/badge/JWT-JJWT%200.12.6-blue.svg)](https://github.com/jwtk/jjwt)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
-[![MapStruct](https://img.shields.io/badge/MapStruct-1.6.3-yellow.svg)](https://mapstruct.org/)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
-
-A robust, enterprise-grade e-commerce backend built with **Spring Boot 3**, **Spring Security 6**, and **MySQL**. Designed adhering to **Clean Architecture**, **SOLID principles**, and pure **RESTful API standards**, featuring stateless JWT authentication, role-based access control (RBAC), and transactional order processing.
+A RESTful backend service for an e-commerce platform built with Spring Boot 3, Spring Security 6, and MySQL. It handles user authentication with JWT, product catalog management, shopping cart operations, and transactional order checkout with inventory validation.
 
 ---
 
-## 🌟 Key Highlights & Architecture
+## Tech Stack
 
-- **Clean Layered Architecture**: Strict separation of concerns across `Controller`, `Service`, `Repository`, and `Model` layers.
-- **DTO-First Pattern & Zero Entity Leakage**: All API contracts communicate strictly via dedicated Request/Response DTOs mapped with **MapStruct 1.6.3** at compile-time for optimal runtime performance.
-- **Stateless JWT & RBAC**: Fully stateless authentication powered by **Spring Security 6** and **JJWT 0.12.6**. Fine-grained endpoint authorization via method-level `@PreAuthorize` (`ROLE_USER`, `ROLE_ADMIN`).
-- **Transactional Order Checkout**: Atomically validates inventory, decrements product stock, snapshots unit price at checkout time (`priceAtOrderTime`), and clears the user's active cart in a single `@Transactional` boundary.
-- **Standardized API Envelope**: Unified response schema across all endpoints:
-  - `SuccessResponse<T>` with automated pagination metadata (`size`, `page`, `totalPages`, `totalElements`).
-  - `ErrorResponse` with RFC 7807 compliant structure, domain categorization, and field-level validation details.
-- **Centralized Exception Handling**: Hierarchical `BaseException` caught by `@RestControllerAdvice` (`GlobalExceptionHandler`) to ensure consistent, secure error payloads without exposing internal stack traces.
-- **Soft Deletion & Data Audit**: Soft delete mechanism implemented on critical resources (`User`, `Product`) to preserve relational integrity with historical orders.
+- **Framework**: Spring Boot 3.4.5 (Spring MVC, Spring Data JPA, Spring Security, Validation)
+- **Language**: Java 17
+- **Database**: MySQL 8.0 with HikariCP connection pooling
+- **Security**: Spring Security 6, JJWT 0.12.6, BCrypt
+- **Mapping & Utilities**: MapStruct 1.6.3, Project Lombok
+- **Build Tool**: Maven Wrapper (`mvnw`)
 
 ---
 
-## 🛠️ Tech Stack
+## Key Features & Design Decisions
 
-| Category | Technologies |
-| :--- | :--- |
-| **Language & Framework** | Java 17, Spring Boot 3.4.5 |
-| **Web & Security** | Spring Web MVC, Spring Security 6, JJWT 0.12.6, BCrypt |
-| **Persistence & Database** | Spring Data JPA (Hibernate 6), MySQL 8.0, HikariCP |
-| **Object Mapping & Utilities**| MapStruct 1.6.3, Project Lombok |
-| **Build & Tooling** | Apache Maven 3.9+ (Maven Wrapper included) |
+### 1. Authentication & Role-Based Access Control (RBAC)
+- **Stateless Authentication**: Uses JWT (JSON Web Tokens) with HMAC-SHA512 signature. The filter chain (`JwtAuthenticationFilter`) validates the token on each request and populates the `SecurityContext`.
+- **Role Enforcement**: Protected routes check permissions via `@PreAuthorize("hasRole('ADMIN')")` or SecurityFilterChain URL matching (`/api/auth/**` and `GET /api/products/**` are public).
+- **Graceful Error Handling**: Custom `AuthenticationEntryPoint` and `AccessDeniedHandler` return standardized JSON error envelopes instead of default HTML error pages.
+
+### 2. DTO-First Architecture
+- JPA entities are never exposed directly to controllers. All client requests and responses use dedicated DTOs (`request/` and `response/`).
+- **MapStruct** generates type-safe object mappings at compile-time, avoiding reflection overhead while preventing entity leakage and lazy loading serialization issues.
+
+### 3. Shopping Cart & Inventory Management
+- Carts are tied to individual user accounts.
+- Adding existing items to the cart automatically increments item quantities.
+- Stock availability is verified prior to cart additions.
+
+### 4. Transactional Order Checkout
+- Order checkout is handled in a single `@Transactional` method (`OrderServiceImpl.checkout`):
+  - Validates cart contents and checks live product stock.
+  - Decrements product inventory atomically.
+  - Snapshots current unit prices into `OrderItem.priceAtOrderTime` so historical orders remain unaffected by future product price changes.
+  - Clears the user's cart upon successful order creation.
+
+### 5. Soft Delete & Relational Integrity
+- Critical domain entities (`User`, `Product`) use soft deletion (`deleted` flag) to prevent broken foreign key references in historical order records.
+
+### 6. Unified Response Envelope & Exception Handling
+- All endpoints wrap responses in a standard `SuccessResponse<T>` format, including pagination metadata (`page`, `size`, `totalElements`, `totalPages`) for paged queries.
+- Business and validation errors are handled by `@RestControllerAdvice` (`GlobalExceptionHandler`), returning consistent `ErrorResponse` objects with domain context and field validation details.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 src/main/java/com/ecommerce/
-├── controller/         # REST Controllers handling HTTP requests & response wrapping
-│   ├── AuthController.java
-│   ├── CartController.java
-│   ├── OrderController.java
-│   ├── ProductController.java
-│   └── UserController.java
-├── service/            # Business logic interfaces & transactional implementations
-│   ├── AuthService.java
-│   ├── CartService.java
-│   ├── OrderService.java
-│   ├── ProductService.java
-│   ├── UserService.java
+├── controller/         # REST endpoints (Auth, Product, Cart, Order, User)
+├── service/            # Business interfaces & transactional implementations
 │   └── impl/
-├── repository/         # Spring Data JPA repositories with derived & custom queries
-│   ├── CartRepository.java
-│   ├── CartItemRepository.java
-│   ├── OrderRepository.java
-│   ├── OrderItemRepository.java
-│   ├── ProductRepository.java
-│   ├── RoleRepository.java
-│   └── UserRepository.java
-├── model/              # JPA Entities & relational mapping
-│   ├── Cart.java
-│   ├── CartItem.java
-│   ├── Orders.java
-│   ├── OrderItem.java
-│   ├── Product.java
-│   ├── Role.java
-│   ├── User.java
-│   └── enums/
-├── dto/                # Data Transfer Objects
-│   ├── request/        # Validated input payloads (@Valid, @NotBlank, etc.)
-│   └── response/       # Client-facing API response objects & envelopes
-├── mapper/             # Compile-time MapStruct mapper interfaces
-│   ├── CartMapper.java
-│   ├── OrderMapper.java
-│   ├── ProductMapper.java
-│   └── UserMapper.java
-├── security/           # Spring Security filter chain, JWT filter & custom handlers
-│   ├── CustomUserDetails.java
-│   ├── CustomUserDetailsService.java
-│   ├── CustomAuthenticationEntryPoint.java
-│   ├── CustomAccessDeniedHandler.java
-│   ├── JwtAuthenticationFilter.java
-│   └── SecurityConfiguration.java
-├── exception/          # Custom business exceptions & GlobalExceptionHandler
-│   ├── BaseException.java
-│   ├── ResourceNotFoundException.java
-│   ├── BadRequestException.java
-│   └── GlobalExceptionHandler.java
-└── utils/              # JWT token generation, parsing & validation utilities
-    └── JwtUtils.java
+├── repository/         # Spring Data JPA repositories with derived queries
+├── model/              # JPA Entities (User, Role, Product, Cart, CartItem, Orders, OrderItem)
+├── dto/                # Request validation payloads and Response representations
+│   ├── request/
+│   └── response/
+├── mapper/             # MapStruct compile-time mappers
+├── security/           # Filter chain, JWT provider, UserDetailsService, auth entry points
+├── exception/          # Custom exceptions (ResourceNotFound, BadRequest) & GlobalExceptionHandler
+└── utils/              # JWT signing, claims extraction, and validation helpers
 ```
 
 ---
 
-## 🔌 RESTful API Endpoints
+## API Endpoints Reference
 
-### 🔐 Authentication (`/api/auth`)
-| Method | Endpoint | Access | Description |
+### Authentication (`/api/auth`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/signup` | Public | Register a new user account with default `ROLE_USER` |
-| `POST` | `/api/auth/signin` | Public | Authenticate user credentials and return JWT Bearer token |
+| `POST` | `/api/auth/signup` | Public | Register a new user (`ROLE_USER`) |
+| `POST` | `/api/auth/signin` | Public | Authenticate credentials and receive a JWT token |
 
-### 🛍️ Product Catalog (`/api/products`)
-| Method | Endpoint | Access | Description |
+### Products (`/api/products`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/products` | Public | List products (supports pagination `page`, `size`, `sort` or `unpaged=true`) |
+| `GET` | `/api/products` | Public | List products (paginated, or `unpaged=true`) |
 | `GET` | `/api/products/{id}` | Public | Get product details by ID |
-| `GET` | `/api/products/search?name=...` | Public | Case-insensitive product search with pagination |
-| `POST` | `/api/products` | `ADMIN` | Create a new product |
-| `PUT` | `/api/products/{id}` | `ADMIN` | Update an existing product |
-| `DELETE` | `/api/products/{id}` | `ADMIN` | Soft delete a product |
+| `GET` | `/api/products/search?name=...` | Public | Search products by name (paginated) |
+| `POST` | `/api/products` | Admin | Create a new product |
+| `PUT` | `/api/products/{id}` | Admin | Update product information |
+| `DELETE` | `/api/products/{id}` | Admin | Soft delete a product |
 
-### 🛒 Shopping Cart (`/api/cart`)
-| Method | Endpoint | Access | Description |
+### Cart (`/api/cart`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/cart` | `USER` / `ADMIN` | Retrieve authenticated user's cart and item totals |
-| `POST` | `/api/cart/items` | `USER` / `ADMIN` | Add item to cart or increment quantity |
-| `DELETE` | `/api/cart/items/{productId}` | `USER` / `ADMIN` | Remove a product from the cart |
-| `DELETE` | `/api/cart` | `USER` / `ADMIN` | Empty all items from the cart |
+| `GET` | `/api/cart` | User | Get current user's shopping cart |
+| `POST` | `/api/cart/items` | User | Add item to cart or increment quantity |
+| `DELETE` | `/api/cart/items/{productId}` | User | Remove an item from the cart |
+| `DELETE` | `/api/cart` | User | Clear entire cart |
 
-### 📦 Orders (`/api/orders`)
-| Method | Endpoint | Access | Description |
+### Orders (`/api/orders`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/orders/checkout` | `USER` / `ADMIN` | Place order from current cart (validates stock, creates order, clears cart) |
-| `GET` | `/api/orders` | `USER` / `ADMIN` | View order history summaries for the authenticated user |
-| `GET` | `/api/orders/{orderId}` | `USER` / `ADMIN` | View detailed order breakdown with item snapshot prices |
+| `POST` | `/api/orders/checkout` | User | Checkout active cart and generate order |
+| `GET` | `/api/orders` | User | View order history summaries for current user |
+| `GET` | `/api/orders/{orderId}` | User / Admin | View order details (owner or admin only) |
 
-### 👤 User Management (`/api/users`)
-| Method | Endpoint | Access | Description |
+### Users (`/api/users`)
+| Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/users/me` | `USER` / `ADMIN` | View current user's profile |
-| `GET` | `/api/users` | `ADMIN` | List all registered users (paginated) |
-| `GET` | `/api/users/{id}` | `ADMIN` | Retrieve user profile by ID |
-| `PUT` | `/api/users/{id}` | `USER` / `ADMIN` | Update profile information (Self or Admin) |
-| `DELETE` | `/api/users/{id}` | `ADMIN` | Soft delete user account |
-| `GET` | `/api/users/search?keyword=...`| `ADMIN` | Search users by keyword (username, email, phone) |
+| `GET` | `/api/users/me` | User | View current authenticated user's profile |
+| `PUT` | `/api/users/me` | User | Update current authenticated user's profile |
+| `GET` | `/api/users` | Admin | List all registered users (paginated) |
+| `GET` | `/api/users/{id}` | Admin | Get user profile by ID |
+| `PUT` | `/api/users/{id}` | Admin | Update user information |
+| `DELETE` | `/api/users/{id}` | Admin | Soft delete user account |
+| `GET` | `/api/users/search?keyword=...` | Admin | Search users by keyword |
 
 ---
 
-## 📦 API Response Schema
+## Response Format
 
-### Standard Success Response
+### Success Response
 ```json
 {
-  "timestamp": "2026-10-26T20:00:00Z",
+  "timestamp": "2026-10-27T15:00:00Z",
   "status": 200,
   "data": {
     "id": 1,
-    "productName": "Wireless Mechanical Keyboard",
+    "productName": "Mechanical Keyboard",
     "price": 89.99,
-    "stock": 45
+    "stock": 50
   },
   "pagination": null
 }
 ```
 
-### Paginated Success Response
+### Paginated Response
 ```json
 {
-  "timestamp": "2026-10-26T20:00:00Z",
+  "timestamp": "2026-10-27T15:00:00Z",
   "status": 200,
   "data": [ ... ],
   "pagination": {
@@ -175,10 +145,10 @@ src/main/java/com/ecommerce/
 }
 ```
 
-### Standard Error Response
+### Error Response
 ```json
 {
-  "timestamp": "2026-10-26T20:00:00Z",
+  "timestamp": "2026-10-27T15:00:00Z",
   "status": 404,
   "error": "Not Found",
   "code": "RESOURCE_NOT_FOUND",
@@ -190,52 +160,36 @@ src/main/java/com/ecommerce/
 
 ---
 
-## 🚀 Getting Started
+## Local Setup
 
-### Prerequisites
+### Requirements
 - **JDK 17** or higher
 - **MySQL 8.0+**
-- **Git**
 
-### Installation & Run
+### Configuration
+Update the database connection details in `src/main/resources/application.properties`:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/DOTOR1208/spring-boot-ecommerce-api.git
-   cd spring-boot-ecommerce-api
-   ```
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db?createDatabaseIfNotExist=true
+spring.datasource.username=root
+spring.datasource.password=your_password
+server.port=8081
+```
 
-2. **Configure Database**:
-   Update `src/main/resources/application.properties` with your MySQL credentials:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db?createDatabaseIfNotExist=true
-   spring.datasource.username=root
-   spring.datasource.password=your_password
-   ```
+### Running the Application
 
-3. **Build & Run**:
-   - **Linux / macOS**:
-     ```bash
-     ./mvnw clean spring-boot:run
-     ```
-   - **Windows**:
-     ```powershell
-     .\mvnw.cmd clean spring-boot:run
-     ```
+```powershell
+# Windows
+.\mvnw.cmd spring-boot:run
 
-4. **Verify Application**:
-   The server will start at: `http://localhost:8081`
+# Linux / macOS
+./mvnw spring-boot:run
+```
 
----
+The application runs on `http://localhost:8081`.
 
-## 🧪 Running Tests
+### Running Tests
 
-Execute automated unit and integration tests using Maven:
 ```powershell
 .\mvnw.cmd test
 ```
-
----
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

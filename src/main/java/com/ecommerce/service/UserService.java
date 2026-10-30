@@ -21,6 +21,8 @@ public interface UserService {
 
     User getUserEntityByUsername(String username);
 
+    UserResponseDto updateCurrentUser(String username, UserRequestDto request);
+
     UserResponseDto updateUser(Integer id, UserRequestDto request);
 
     void deleteUser(Integer id);

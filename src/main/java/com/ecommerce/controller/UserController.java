@@ -36,6 +36,14 @@ public class UserController {
         return SuccessResponse.of(this.userService.getUserByUsername(userDetails.getUsername()));
     }
 
+    @PutMapping("/me")
+    public SuccessResponse<UserResponseDto> updateCurrentUserProfile(
+            @AuthenticationPrincipal final CustomUserDetails userDetails,
+            @Valid @RequestBody final UserRequestDto request) {
+        log.info("Received request to update current user profile for: '{}'", userDetails.getUsername());
+        return SuccessResponse.of(this.userService.updateCurrentUser(userDetails.getUsername(), request));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public SuccessResponse<?> getAllUsers(final Pageable pageable) {
@@ -54,6 +62,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public SuccessResponse<UserResponseDto> updateUser(
             @PathVariable final Integer id,
             @Valid @RequestBody final UserRequestDto request) {
