@@ -11,6 +11,7 @@ A RESTful backend service for an e-commerce platform built with Spring Boot 3, S
 - **Database**: MySQL 8.0 with HikariCP connection pooling
 - **Security**: Spring Security 6, JJWT 0.12.6, BCrypt
 - **Mapping & Utilities**: MapStruct 1.6.3, Project Lombok
+- **Containerization**: Docker, Docker Compose
 - **Build Tool**: Maven Wrapper (`mvnw`)
 
 ---
@@ -187,6 +188,32 @@ server.port=8081
 ```
 
 The application runs on `http://localhost:8081`.
+
+### Running with Docker (Recommended)
+
+You can run the entire system (Spring Boot API + MySQL database) with a single command:
+
+1. **Package the application JAR**:
+   ```powershell
+   .\mvnw.cmd clean package -DskipTests
+   ```
+
+2. **Start containers via Docker Compose**:
+   ```powershell
+   docker compose up --build -d
+   ```
+
+3. **Check container status**:
+   ```powershell
+   docker compose ps
+   ```
+
+4. **Stop containers**:
+   ```powershell
+   docker compose down
+   ```
+
+---
 
 ### Running Tests
 

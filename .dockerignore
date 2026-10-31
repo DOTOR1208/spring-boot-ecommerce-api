@@ -1,0 +1,10 @@
+.git
+.gitignore
+.dockerignore
+.mvn/
+src/
+.settings/
+.project
+.classpath
+.factorypath
+*.md
