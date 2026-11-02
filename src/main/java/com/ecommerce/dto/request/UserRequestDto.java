@@ -24,6 +24,4 @@ public class UserRequestDto {
     @NotBlank(message = "Email cannot be blank")
     @Email(message = "Invalid email format")
     private String email;
-
-    private String password;
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.ecommerce.dto.request.ChangePasswordRequest;
 import com.ecommerce.dto.request.UserRequestDto;
 import com.ecommerce.dto.response.UserResponseDto;
 import com.ecommerce.model.User;
@@ -22,6 +23,8 @@ public interface UserService {
     User getUserEntityByUsername(String username);
 
     UserResponseDto updateCurrentUser(String username, UserRequestDto request);
+
+    void changePassword(String username, ChangePasswordRequest request);
 
     UserResponseDto updateUser(Integer id, UserRequestDto request);
 

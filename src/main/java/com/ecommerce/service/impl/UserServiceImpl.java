@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.ecommerce.dto.request.ChangePasswordRequest;
 import com.ecommerce.dto.request.UserRequestDto;
 import com.ecommerce.dto.response.UserResponseDto;
+import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.UserAlreadyExistException;
 import com.ecommerce.exception.UserNotFoundException;
 import com.ecommerce.mapper.UserMapper;
@@ -82,6 +84,33 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void changePassword(final String username, final ChangePasswordRequest request) {
+        log.info("Processing change password request for user: '{}'", username);
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            log.warn("Change password failed for user '{}': new password and confirmation do not match", username);
+            throw new BadRequestException("New password and confirmation password do not match");
+        }
+
+        User user = getUserEntityByUsername(username);
+
+        if (!this.passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            log.warn("Change password failed for user '{}': current password is incorrect", username);
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (this.passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            log.warn("Change password failed for user '{}': new password cannot be same as current password", username);
+            throw new BadRequestException("New password cannot be the same as current password");
+        }
+
+        user.setPassword(this.passwordEncoder.encode(request.getNewPassword()));
+        this.userRepository.save(user);
+        log.info("Password changed successfully for user: '{}'", username);
+    }
+
+    @Override
+    @Transactional
     public UserResponseDto updateUser(final Integer id, final UserRequestDto request) {
         log.info("Updating user with ID: {}", id);
 
@@ -100,10 +129,6 @@ public class UserServiceImpl implements UserService {
         }
 
         this.userMapper.updateEntityFromDto(request, user);
-
-        if (StringUtils.hasText(request.getPassword())) {
-            user.setPassword(this.passwordEncoder.encode(request.getPassword()));
-        }
 
         User updatedUser = this.userRepository.save(user);
         log.info("User with ID: {} updated successfully", id);

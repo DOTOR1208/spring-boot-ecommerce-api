@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ecommerce.dto.request.ChangePasswordRequest;
 import com.ecommerce.dto.request.UserRequestDto;
 import com.ecommerce.dto.response.UserResponseDto;
 import com.ecommerce.response.SuccessResponse;
@@ -42,6 +43,15 @@ public class UserController {
             @Valid @RequestBody final UserRequestDto request) {
         log.info("Received request to update current user profile for: '{}'", userDetails.getUsername());
         return SuccessResponse.of(this.userService.updateCurrentUser(userDetails.getUsername(), request));
+    }
+
+    @PutMapping("/change-password")
+    public SuccessResponse<String> changePassword(
+            @AuthenticationPrincipal final CustomUserDetails userDetails,
+            @Valid @RequestBody final ChangePasswordRequest request) {
+        log.info("Received request to change password for user: '{}'", userDetails.getUsername());
+        this.userService.changePassword(userDetails.getUsername(), request);
+        return SuccessResponse.of("Password changed successfully");
     }
 
     @GetMapping

@@ -106,6 +106,7 @@ src/main/java/com/ecommerce/
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/users/me` | User | View current authenticated user's profile |
 | `PUT` | `/api/users/me` | User | Update current authenticated user's profile |
+| `PUT` | `/api/users/change-password` | User | Change password (verifies current password) |
 | `GET` | `/api/users` | Admin | List all registered users (paginated) |
 | `GET` | `/api/users/{id}` | Admin | Get user profile by ID |
 | `PUT` | `/api/users/{id}` | Admin | Update user information |
