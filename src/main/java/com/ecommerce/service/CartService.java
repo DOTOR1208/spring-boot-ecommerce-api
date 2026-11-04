@@ -12,5 +12,7 @@ public interface CartService {
 
     CartResponseDto removeProductFromCart(User user, Integer productId);
 
+    CartResponseDto updateCartItemQuantity(User user, Integer productId, Integer quantity);
+
     void clearCart(User user);
 }

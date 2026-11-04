@@ -91,6 +91,7 @@ src/main/java/com/ecommerce/
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/cart` | User | Get current user's shopping cart |
 | `POST` | `/api/cart/items` | User | Add item to cart or increment quantity |
+| `PUT` | `/api/cart/items/{productId}` | User | Update item quantity directly (removes if quantity <= 0) |
 | `DELETE` | `/api/cart/items/{productId}` | User | Remove an item from the cart |
 | `DELETE` | `/api/cart` | User | Clear entire cart |
 
@@ -111,6 +112,7 @@ src/main/java/com/ecommerce/
 | `GET` | `/api/users/{id}` | Admin | Get user profile by ID |
 | `PUT` | `/api/users/{id}` | Admin | Update user information |
 | `DELETE` | `/api/users/{id}` | Admin | Soft delete user account |
+| `PUT` | `/api/users/{id}/restore` | Admin | Restore / reactivate a soft-deleted user account |
 | `GET` | `/api/users/search?keyword=...` | Admin | Search users by keyword |
 
 ---

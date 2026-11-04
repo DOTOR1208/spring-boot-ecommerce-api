@@ -5,11 +5,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.dto.request.CartRequestDto;
+import com.ecommerce.dto.request.UpdateCartItemRequest;
 import com.ecommerce.dto.response.CartResponseDto;
 import com.ecommerce.model.User;
 import com.ecommerce.response.SuccessResponse;
@@ -45,6 +47,17 @@ public class CartController {
                 request.getProductId(), userDetails.getUsername());
         User user = this.userService.getUserEntityByUsername(userDetails.getUsername());
         return SuccessResponse.of(this.cartService.addToCart(user, request));
+    }
+
+    @PutMapping("/items/{productId}")
+    public SuccessResponse<CartResponseDto> updateCartItemQuantity(
+            @AuthenticationPrincipal final CustomUserDetails userDetails,
+            @PathVariable final Integer productId,
+            @Valid @RequestBody final UpdateCartItemRequest request) {
+        log.info("Received request to update product ID {} quantity to {} for user '{}'",
+                productId, request.getQuantity(), userDetails.getUsername());
+        User user = this.userService.getUserEntityByUsername(userDetails.getUsername());
+        return SuccessResponse.of(this.cartService.updateCartItemQuantity(user, productId, request.getQuantity()));
     }
 
     @DeleteMapping("/items/{productId}")

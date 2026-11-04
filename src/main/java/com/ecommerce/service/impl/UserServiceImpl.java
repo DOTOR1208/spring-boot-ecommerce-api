@@ -34,16 +34,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponseDto> getAllUsers() {
-        log.info("Fetching all active users");
-        List<User> users = this.userRepository.findAll().stream()
-                .filter(user -> !user.isDeleted())
-                .toList();
+        log.info("Fetching all users");
+        List<User> users = this.userRepository.findAll();
         return this.userMapper.toDTOs(users);
     }
 
     @Override
     public Page<UserResponseDto> getAllUsers(final Pageable pageable) {
-        log.info("Fetching active users with pagination: {}", pageable);
+        log.info("Fetching users with pagination: {}", pageable);
         return this.userRepository.findAll(pageable)
                 .map(this.userMapper::toDTO);
     }
@@ -52,7 +50,6 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getUserById(final Integer id) {
         log.info("Fetching user by ID: {}", id);
         User user = this.userRepository.findById(id)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new UserNotFoundException(String.format("User not found with id: %d", id)));
         return this.userMapper.toDTO(user);
     }
@@ -148,6 +145,26 @@ public class UserServiceImpl implements UserService {
         user.setDeleted(true);
         this.userRepository.save(user);
         log.info("User with ID: {} successfully marked as deleted", id);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDto restoreUser(final Integer id) {
+        log.info("Restoring soft-deleted user with ID: {}", id);
+
+        User user = this.userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(String.format("User not found with id: %d", id)));
+
+        if (!user.isDeleted()) {
+            log.info("User with ID: {} is already active", id);
+            return this.userMapper.toDTO(user);
+        }
+
+        user.setDeleted(false);
+        User restoredUser = this.userRepository.save(user);
+        log.info("User with ID: {} successfully restored", id);
+
+        return this.userMapper.toDTO(restoredUser);
     }
 
     @Override

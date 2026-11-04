@@ -88,6 +88,13 @@ public class UserController {
         return SuccessResponse.of("User deleted successfully");
     }
 
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SuccessResponse<UserResponseDto> restoreUser(@PathVariable final Integer id) {
+        log.info("Received request to restore user ID: {}", id);
+        return SuccessResponse.of(this.userService.restoreUser(id));
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
     public SuccessResponse<?> searchUsers(

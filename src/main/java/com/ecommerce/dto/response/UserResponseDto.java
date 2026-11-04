@@ -20,4 +20,5 @@ public class UserResponseDto {
     private String userName;
     private String email;
     private List<String> roles;
+    private boolean deleted;
 }

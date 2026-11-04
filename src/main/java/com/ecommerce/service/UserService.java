@@ -30,5 +30,7 @@ public interface UserService {
 
     void deleteUser(Integer id);
 
+    UserResponseDto restoreUser(Integer id);
+
     Page<UserResponseDto> searchUsers(String keyword, Pageable pageable);
 }

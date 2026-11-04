@@ -119,6 +119,43 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    public CartResponseDto updateCartItemQuantity(final User user, final Integer productId, final Integer quantity) {
+        log.info("Updating quantity of product ID {} to {} in cart for user '{}'",
+                productId, quantity, user.getUserName());
+
+        Cart cart = this.cartRepository.findByUser(user).orElseGet(() -> {
+            log.info("No cart found for user '{}', creating a new cart", user.getUserName());
+            Cart newCart = Cart.builder().user(user).build();
+            return this.cartRepository.save(newCart);
+        });
+
+        CartItem existingItem = cart.getCartItems().stream()
+                .filter(item -> item.getProduct() != null && item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new ProductNotFoundException(String.format("Product with id %d not found in cart", productId)));
+
+        if (quantity <= 0) {
+            log.info("Quantity is <= 0 ({}), removing product ID {} from cart ID {}", quantity, productId, cart.getId());
+            cart.getCartItems().remove(existingItem);
+        } else {
+            Product product = existingItem.getProduct();
+            if (product.getStock() < quantity) {
+                log.warn("Insufficient stock for product ID {}. Available: {}, Requested: {}",
+                        product.getId(), product.getStock(), quantity);
+                throw new BadRequestException(String.format("Insufficient stock for product '%s'. Available: %d, Requested: %d",
+                        product.getName(), product.getStock(), quantity));
+            }
+            existingItem.setQuantity(quantity);
+            this.cartItemRepository.save(existingItem);
+            log.info("Updated quantity of product ID {} to {} in cart ID {}", productId, quantity, cart.getId());
+        }
+
+        Cart updatedCart = this.cartRepository.save(cart);
+        return this.cartMapper.toDTO(updatedCart);
+    }
+
+    @Override
+    @Transactional
     public void clearCart(final User user) {
         log.info("Clearing cart for user '{}'", user.getUserName());
 
