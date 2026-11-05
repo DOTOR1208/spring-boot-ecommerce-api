@@ -192,21 +192,16 @@ server.port=8081
 
 The application runs on `http://localhost:8081`.
 
-### Running with Docker (Recommended)
+### Running with Docker (Recommended - Multi-Stage Zero-Setup)
 
-You can run the entire system (Spring Boot API + MySQL database) with a single command:
+Thanks to the **Multi-Stage Dockerfile**, you do **not** need Java or Maven installed on your host machine. Docker automatically compiles the source code inside an isolated Maven container and packages the final app into a lightweight JRE runtime container.
 
-1. **Package the application JAR**:
-   ```powershell
-   .\mvnw.cmd clean package -DskipTests
-   ```
-
-2. **Start containers via Docker Compose**:
+1. **Start all containers via Docker Compose**:
    ```powershell
    docker compose up --build -d
    ```
 
-3. **Check container status**:
+2. **Check container status**:
    ```powershell
    docker compose ps
    ```
