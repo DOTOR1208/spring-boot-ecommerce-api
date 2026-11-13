@@ -169,6 +169,10 @@ class AuthServiceImplTest {
             when(userMapper.toModel(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("rawPass123")).thenReturn("encoded_rawPass123");
             when(roleRepository.findByName(SecurityRole.ROLE_USER)).thenReturn(List.of(sampleRole));
+            // Mocking userRepository.save() behavior:
+            // 1. Primary approach (thenAnswer): Simulates DB auto-increment ID generation by setting id = 1 on the saved entity.
+            // 2. Alternative approach: when(userRepository.save(mappedUser)).thenReturn(mappedUser);
+            //    Both are valid because Unit Tests verify Service business logic, not Repository/JPA persistence mechanics.
             when(userRepository.save(mappedUser)).thenAnswer(invocation -> {
                 User u = invocation.getArgument(0);
                 u.setId(1);
