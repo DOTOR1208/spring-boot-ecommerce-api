@@ -182,9 +182,9 @@ class ProductControllerTest {
     @DisplayName("POST /api/products - When body has validation errors, returns 400 Bad Request")
     void createProduct_ValidationFailed_Returns400() throws Exception {
         ProductRequestDto invalidRequest = ProductRequestDto.builder()
-                .name("") // blank name
-                .stock(-5) // negative stock
-                .price(-10.0) // negative price
+                .name("")
+                .stock(-5)
+                .price(-10.0)
                 .build();
 
         mockMvc.perform(post("/api/products")
