@@ -42,6 +42,7 @@ import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.impl.OrderServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("OrderService Unit Tests")
 class OrderServiceImplTest {
 
     @Mock
@@ -112,14 +113,9 @@ class OrderServiceImplTest {
                 .build();
     }
 
-    // ==========================================
-    // 1. Tests for checkoutOrder
-    // ==========================================
-
     @Test
     @DisplayName("checkoutOrder: Should deduct stock, snapshot price, clear cart and return OrderResponseDto")
     void checkoutOrder_WhenSuccessful_ShouldDeductStockSnapshotPriceAndClearCart() {
-        // Arrange: Cart with 2 keyboards (stock is 10, price is 120.0)
         CartItem cartItem = CartItem.builder()
                 .id(1)
                 .cart(sampleCart)
@@ -134,22 +130,18 @@ class OrderServiceImplTest {
         when(cartRepository.save(any(Cart.class))).thenReturn(sampleCart);
         when(orderMapper.toSummaryDTO(sampleOrder)).thenReturn(sampleOrderSummaryDto);
 
-        // Act
         OrderResponseDto result = orderService.checkoutOrder(sampleUser);
 
-        // Assert
         assertNotNull(result);
         assertEquals(50, result.getOrderId());
         assertEquals("COMPLETED", result.getStatus());
 
-        // Verify stock deducted: 10 - 2 = 8
+        // Business Rule: Ensure stock is deducted correctly (10 - 2 = 8)
         assertEquals(8, sampleProduct.getStock());
         verify(productRepository, times(1)).save(sampleProduct);
 
-        // Verify order saved
+        // Verify order saved and cart cleared
         verify(orderRepository, times(1)).save(any(Orders.class));
-
-        // Verify cart is cleared
         assertTrue(sampleCart.getCartItems().isEmpty());
         verify(cartRepository, times(1)).save(sampleCart);
     }
@@ -157,10 +149,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("checkoutOrder: Should throw CartNotFoundException when user has no cart")
     void checkoutOrder_WhenCartNotFound_ShouldThrowCartNotFoundException() {
-        // Arrange
         when(cartRepository.findByUser(sampleUser)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(CartNotFoundException.class, () -> {
             orderService.checkoutOrder(sampleUser);
         });
@@ -170,10 +160,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("checkoutOrder: Should throw BadRequestException when cart is empty")
     void checkoutOrder_WhenCartIsEmpty_ShouldThrowBadRequestException() {
-        // Arrange: Cart with no items
         when(cartRepository.findByUser(sampleUser)).thenReturn(Optional.of(sampleCart));
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> {
             orderService.checkoutOrder(sampleUser);
         });
@@ -183,7 +171,7 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("checkoutOrder: Should throw BadRequestException when product stock is insufficient")
     void checkoutOrder_WhenStockInsufficientAtCheckout_ShouldThrowBadRequestException() {
-        // Arrange: Product stock is 1, but cart item requested 5
+        // Product stock is 1, but cart item requested 5
         sampleProduct.setStock(1);
         CartItem cartItem = CartItem.builder()
                 .id(1)
@@ -195,55 +183,41 @@ class OrderServiceImplTest {
 
         when(cartRepository.findByUser(sampleUser)).thenReturn(Optional.of(sampleCart));
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> {
             orderService.checkoutOrder(sampleUser);
         });
 
-        // Stock should remain untouched and no order created
+        // Rollback Guarantee: Stock must remain untouched and no order created
         assertEquals(1, sampleProduct.getStock());
         verify(orderRepository, never()).save(any(Orders.class));
     }
 
-    // ==========================================
-    // 2. Tests for getOrderSummaries
-    // ==========================================
-
     @Test
     @DisplayName("getOrderSummaries: Should return list of user order summaries")
     void getOrderSummaries_ShouldReturnListOfUserOrders() {
-        // Arrange
         List<Orders> ordersList = List.of(sampleOrder);
         List<OrderResponseDto> dtoList = List.of(sampleOrderSummaryDto);
 
         when(orderRepository.findByUserOrderByOrderDateDesc(sampleUser)).thenReturn(ordersList);
         when(orderMapper.toSummaryDTOs(ordersList)).thenReturn(dtoList);
 
-        // Act
         List<OrderResponseDto> result = orderService.getOrderSummaries(sampleUser);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(50, result.get(0).getOrderId());
         verify(orderRepository, times(1)).findByUserOrderByOrderDateDesc(sampleUser);
     }
 
-    // ==========================================
-    // 3. Tests for getOrderDetail (Anti-IDOR & Role Access)
-    // ==========================================
-
     @Test
     @DisplayName("getOrderDetail: Should return detail when requesting user is order owner")
     void getOrderDetail_WhenUserIsOwner_ShouldReturnDetailDto() {
-        // Arrange
         when(orderRepository.findById(50)).thenReturn(Optional.of(sampleOrder));
         when(orderMapper.toDetailDTO(sampleOrder)).thenReturn(sampleOrderDetailDto);
 
-        // Act: sampleUser is the owner (ID 1 == ID 1)
+        // sampleUser is the owner (ID 1 == ID 1)
         OrderDetailResponseDto result = orderService.getOrderDetail(50, sampleUser);
 
-        // Assert
         assertNotNull(result);
         assertEquals(50, result.getOrderId());
         verify(orderRepository, times(1)).findById(50);
@@ -252,24 +226,22 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("getOrderDetail: Should return detail when requesting user is Admin")
     void getOrderDetail_WhenUserIsAdmin_ShouldReturnDetailDto() {
-        // Arrange: Order belongs to user ID 2
+        // Order belongs to user ID 2
         User anotherUser = User.builder().id(2).userName("jane_doe").build();
         Orders anotherUserOrder = Orders.builder()
                 .id(50)
                 .user(anotherUser)
                 .build();
 
-        // Calling user has ROLE_ADMIN
+        // Security - RBAC: Calling user has ROLE_ADMIN
         Role adminRole = Role.builder().name("ROLE_ADMIN").build();
         sampleUser.getRoles().add(adminRole);
 
         when(orderRepository.findById(50)).thenReturn(Optional.of(anotherUserOrder));
         when(orderMapper.toDetailDTO(anotherUserOrder)).thenReturn(sampleOrderDetailDto);
 
-        // Act
         OrderDetailResponseDto result = orderService.getOrderDetail(50, sampleUser);
 
-        // Assert
         assertNotNull(result);
         verify(orderRepository, times(1)).findById(50);
     }
@@ -277,17 +249,16 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("getOrderDetail: Should throw BadRequestException when user is neither owner nor admin (Anti-IDOR)")
     void getOrderDetail_WhenUserIsNotOwnerAndNotAdmin_ShouldThrowBadRequestException() {
-        // Arrange: Order belongs to user ID 2
+        // Order belongs to user ID 2, calling user is a normal user ID 1 (not owner, no admin role)
         User anotherUser = User.builder().id(2).userName("jane_doe").build();
         Orders anotherUserOrder = Orders.builder()
                 .id(50)
                 .user(anotherUser)
                 .build();
 
-        // Calling user is a normal user (ID 1, not owner, no admin role)
         when(orderRepository.findById(50)).thenReturn(Optional.of(anotherUserOrder));
 
-        // Act & Assert
+        // Security - Anti-IDOR: Should reject unauthorized access
         assertThrows(BadRequestException.class, () -> {
             orderService.getOrderDetail(50, sampleUser);
         });
@@ -296,10 +267,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("getOrderDetail: Should throw OrderNotFoundException when order does not exist")
     void getOrderDetail_WhenOrderNotFound_ShouldThrowOrderNotFoundException() {
-        // Arrange
         when(orderRepository.findById(999)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(OrderNotFoundException.class, () -> {
             orderService.getOrderDetail(999, sampleUser);
         });

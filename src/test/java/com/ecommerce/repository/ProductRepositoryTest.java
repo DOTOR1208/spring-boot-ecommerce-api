@@ -137,7 +137,7 @@ class ProductRepositoryTest {
     @DisplayName("persisting duplicate product name should violate unique constraint")
     void save_DuplicateName_ThrowsException() {
         Product duplicateName = Product.builder()
-                .name("MacBook Pro 16") // Duplicate name
+                .name("MacBook Pro 16")
                 .description("Another description")
                 .itemCode(2001)
                 .manufacturer("Apple")
@@ -156,7 +156,7 @@ class ProductRepositoryTest {
         Product duplicateCode = Product.builder()
                 .name("Unique Laptop Name")
                 .description("Another description")
-                .itemCode(1001) // Duplicate itemCode
+                .itemCode(1001)
                 .manufacturer("Apple")
                 .category("Laptop")
                 .stock(5)

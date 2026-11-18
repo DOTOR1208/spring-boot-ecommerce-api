@@ -108,7 +108,8 @@ class OrderRepositoryTest {
         List<Orders> orders = orderRepository.findByUserOrderByOrderDateDesc(sampleUser);
 
         assertThat(orders).hasSize(2);
-        assertThat(orders.get(0).getId()).isEqualTo(order2.getId()); // order2 is newer
+        // Verify descending chronological order: order2 is newer than order1
+        assertThat(orders.get(0).getId()).isEqualTo(order2.getId());
         assertThat(orders.get(1).getId()).isEqualTo(order1.getId());
     }
 

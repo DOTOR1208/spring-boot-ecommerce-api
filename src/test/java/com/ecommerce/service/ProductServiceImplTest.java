@@ -36,6 +36,7 @@ import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.impl.ProductServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("ProductService Unit Tests")
 class ProductServiceImplTest {
 
     @Mock
@@ -77,24 +78,17 @@ class ProductServiceImplTest {
                 .build();
     }
 
-    // ==========================================
-    // 1. Tests for getAllProducts
-    // ==========================================
-
     @Test
     @DisplayName("getAllProducts: Should return list of ProductResponseDto")
     void getAllProducts_ShouldReturnListOfProductResponseDto() {
-        // Arrange
         List<Product> productList = List.of(sampleProduct);
         List<ProductResponseDto> dtoList = List.of(sampleResponseDto);
 
         when(productRepository.findAll()).thenReturn(productList);
         when(productMapper.toDTOs(productList)).thenReturn(dtoList);
 
-        // Act
         List<ProductResponseDto> actual = productService.getAllProducts();
 
-        // Assert
         assertNotNull(actual);
         assertEquals(1, actual.size());
         assertEquals("MacBook Pro M3", actual.get(0).getName());
@@ -104,17 +98,14 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("getAllProducts(Pageable): Should return paged ProductResponseDto")
     void getAllProducts_WithPageable_ShouldReturnPagedResponseDto() {
-        // Arrange
         Pageable pageable = PageRequest.of(0, 10);
         Page<Product> productPage = new PageImpl<>(List.of(sampleProduct), pageable, 1);
 
         when(productRepository.findAll(pageable)).thenReturn(productPage);
         when(productMapper.toDTO(sampleProduct)).thenReturn(sampleResponseDto);
 
-        // Act
         Page<ProductResponseDto> actualPage = productService.getAllProducts(pageable);
 
-        // Assert
         assertNotNull(actualPage);
         assertEquals(1, actualPage.getTotalElements());
         assertEquals(1, actualPage.getContent().size());
@@ -122,21 +113,14 @@ class ProductServiceImplTest {
         verify(productRepository, times(1)).findAll(pageable);
     }
 
-    // ==========================================
-    // 2. Tests for getProductById
-    // ==========================================
-
     @Test
     @DisplayName("getProductById: Should return ProductResponseDto when product exists")
     void getProductById_WhenProductExists_ShouldReturnProductResponseDto() {
-        // Arrange
         when(productRepository.findById(1)).thenReturn(Optional.of(sampleProduct));
         when(productMapper.toDTO(sampleProduct)).thenReturn(sampleResponseDto);
 
-        // Act
         ProductResponseDto actual = productService.getProductById(1);
 
-        // Assert
         assertNotNull(actual);
         assertEquals(1, actual.getId());
         assertEquals("MacBook Pro M3", actual.getName());
@@ -146,33 +130,24 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("getProductById: Should throw ProductNotFoundException when product does not exist")
     void getProductById_WhenProductNotFound_ShouldThrowProductNotFoundException() {
-        // Arrange
         when(productRepository.findById(999)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ProductNotFoundException.class, () -> {
             productService.getProductById(999);
         });
         verify(productRepository, times(1)).findById(999);
     }
 
-    // ==========================================
-    // 3. Tests for createProduct
-    // ==========================================
-
     @Test
     @DisplayName("createProduct: Should save and return DTO when itemCode is unique")
     void createProduct_WhenItemCodeIsUnique_ShouldSaveAndReturnDto() {
-        // Arrange
         when(productRepository.existsByItemCode(1001)).thenReturn(false);
         when(productMapper.toModel(sampleRequestDto)).thenReturn(sampleProduct);
         when(productRepository.save(sampleProduct)).thenReturn(sampleProduct);
         when(productMapper.toDTO(sampleProduct)).thenReturn(sampleResponseDto);
 
-        // Act
         ProductResponseDto actual = productService.createProduct(sampleRequestDto);
 
-        // Assert
         assertNotNull(actual);
         assertEquals(1001, actual.getItemCode());
         verify(productRepository, times(1)).existsByItemCode(1001);
@@ -182,10 +157,8 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("createProduct: Should throw BadRequestException when itemCode already exists")
     void createProduct_WhenItemCodeAlreadyExists_ShouldThrowBadRequestException() {
-        // Arrange
         when(productRepository.existsByItemCode(1001)).thenReturn(true);
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> {
             productService.createProduct(sampleRequestDto);
         });
@@ -194,14 +167,9 @@ class ProductServiceImplTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
-    // ==========================================
-    // 4. Tests for updateProduct
-    // ==========================================
-
     @Test
     @DisplayName("updateProduct: Should update and return DTO when request is valid")
     void updateProduct_WhenValid_ShouldUpdateAndReturnDto() {
-        // Arrange: Update with same itemCode (1001) or new unique itemCode
         ProductRequestDto updateRequest = ProductRequestDto.builder()
                 .name("MacBook Pro M3 Max")
                 .itemCode(1001)
@@ -221,10 +189,8 @@ class ProductServiceImplTest {
         when(productRepository.save(sampleProduct)).thenReturn(sampleProduct);
         when(productMapper.toDTO(sampleProduct)).thenReturn(updatedDto);
 
-        // Act
         ProductResponseDto actual = productService.updateProduct(1, updateRequest);
 
-        // Assert
         assertNotNull(actual);
         assertEquals("MacBook Pro M3 Max", actual.getName());
         assertEquals(2500.0, actual.getPrice());
@@ -235,10 +201,8 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("updateProduct: Should throw ProductNotFoundException when product does not exist")
     void updateProduct_WhenProductNotFound_ShouldThrowProductNotFoundException() {
-        // Arrange
         when(productRepository.findById(999)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ProductNotFoundException.class, () -> {
             productService.updateProduct(999, sampleRequestDto);
         });
@@ -248,7 +212,7 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("updateProduct: Should throw BadRequestException when changing to an existing itemCode")
     void updateProduct_WhenNewItemCodeAlreadyExists_ShouldThrowBadRequestException() {
-        // Arrange: Changing itemCode from 1001 to 2002, but 2002 already exists in DB
+        // Validates uniqueness check when changing itemCode from 1001 to 2002 (where 2002 already exists in DB)
         ProductRequestDto updateRequest = ProductRequestDto.builder()
                 .name("MacBook Pro M3")
                 .itemCode(2002)
@@ -259,27 +223,19 @@ class ProductServiceImplTest {
         when(productRepository.findById(1)).thenReturn(Optional.of(sampleProduct));
         when(productRepository.existsByItemCode(2002)).thenReturn(true);
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> {
             productService.updateProduct(1, updateRequest);
         });
         verify(productRepository, never()).save(any(Product.class));
     }
 
-    // ==========================================
-    // 5. Tests for deleteProduct
-    // ==========================================
-
     @Test
     @DisplayName("deleteProduct: Should delete product when product exists")
     void deleteProduct_WhenProductExists_ShouldDeleteProduct() {
-        // Arrange
         when(productRepository.findById(1)).thenReturn(Optional.of(sampleProduct));
 
-        // Act
         productService.deleteProduct(1);
 
-        // Assert
         verify(productRepository, times(1)).findById(1);
         verify(productRepository, times(1)).delete(sampleProduct);
     }
@@ -287,10 +243,8 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("deleteProduct: Should throw ProductNotFoundException when product does not exist")
     void deleteProduct_WhenProductNotFound_ShouldThrowProductNotFoundException() {
-        // Arrange
         when(productRepository.findById(999)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ProductNotFoundException.class, () -> {
             productService.deleteProduct(999);
         });
@@ -298,24 +252,17 @@ class ProductServiceImplTest {
         verify(productRepository, never()).delete(any(Product.class));
     }
 
-    // ==========================================
-    // 6. Tests for searchProducts
-    // ==========================================
-
     @Test
     @DisplayName("searchProducts: Should return paged ProductResponseDto matching search criteria")
     void searchProducts_ShouldReturnPagedResponseDto() {
-        // Arrange
         Pageable pageable = PageRequest.of(0, 10);
         Page<Product> matchingPage = new PageImpl<>(List.of(sampleProduct), pageable, 1);
 
         when(productRepository.findByNameContainingIgnoreCase("MacBook", pageable)).thenReturn(matchingPage);
         when(productMapper.toDTO(sampleProduct)).thenReturn(sampleResponseDto);
 
-        // Act
         Page<ProductResponseDto> actualPage = productService.searchProducts("MacBook", pageable);
 
-        // Assert
         assertNotNull(actualPage);
         assertFalse(actualPage.isEmpty());
         assertEquals(1, actualPage.getTotalElements());

@@ -82,7 +82,7 @@ class RoleRepositoryTest {
     @DisplayName("persisting duplicate role name should violate unique constraint")
     void save_DuplicateRoleName_ThrowsException() {
         Role duplicate = Role.builder()
-                .name("ROLE_USER") // duplicate name
+                .name("ROLE_USER")
                 .description("Duplicate role")
                 .build();
 

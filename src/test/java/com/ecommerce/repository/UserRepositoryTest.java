@@ -152,7 +152,7 @@ class UserRepositoryTest {
     void save_DuplicateUserName_ThrowsException() {
         User duplicate = User.builder()
                 .name("Different Name")
-                .userName("johndoe") // Duplicate username
+                .userName("johndoe")
                 .password("new_pass")
                 .email("different@example.com")
                 .deleted(false)
@@ -169,7 +169,7 @@ class UserRepositoryTest {
                 .name("Another Name")
                 .userName("differentuser")
                 .password("new_pass")
-                .email("john.doe@example.com") // Duplicate email
+                .email("john.doe@example.com")
                 .deleted(false)
                 .build();
 
