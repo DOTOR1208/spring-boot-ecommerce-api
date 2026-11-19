@@ -1,19 +1,30 @@
 package com.ecommerce.integration;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.ecommerce.dto.request.SignInRequest;
+import com.ecommerce.dto.request.SignUpRequest;
 import com.ecommerce.model.Role;
+import com.ecommerce.model.User;
+import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.repository.RoleRepository;
 import com.ecommerce.repository.UserRepository;
+import com.ecommerce.security.CustomUserDetails;
+import com.ecommerce.utils.JwtUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -53,6 +64,15 @@ public abstract class BaseIntegrationTest {
     @Autowired
     protected UserRepository userRepository;
 
+    @Autowired
+    protected ProductRepository productRepository;
+
+    @Autowired
+    protected PasswordEncoder passwordEncoder;
+
+    @Autowired
+    protected JwtUtils jwtUtils;
+
     @BeforeEach
     void ensureRolesExist() {
         if (roleRepository.findByName("USER").isEmpty()) {
@@ -70,5 +90,39 @@ public abstract class BaseIntegrationTest {
             headers.setBearerAuth(token);
         }
         return headers;
+    }
+
+    protected String createUserAndGetToken(String username) {
+        SignUpRequest request = SignUpRequest.builder()
+                .name("User " + username)
+                .userName(username)
+                .email(username + "@example.com")
+                .password("Password123!")
+                .build();
+        restTemplate.postForEntity("/api/auth/signup", request, JsonNode.class);
+
+        SignInRequest signIn = SignInRequest.builder()
+                .userName(username)
+                .password("Password123!")
+                .build();
+        ResponseEntity<JsonNode> res = restTemplate.postForEntity("/api/auth/signin", signIn, JsonNode.class);
+        return res.getBody().get("data").get("token").asText();
+    }
+
+    protected String createAdminAndGetToken(String adminUsername) {
+        Role adminRole = roleRepository.findFirstByName("ADMIN")
+                .orElseGet(() -> roleRepository.save(Role.builder().name("ADMIN").description("Admin Role").build()));
+        User admin = User.builder()
+                .name("Admin " + adminUsername)
+                .userName(adminUsername)
+                .password(passwordEncoder.encode("AdminPass123!"))
+                .email(adminUsername + "@example.com")
+                .roles(List.of(adminRole))
+                .deleted(false)
+                .build();
+        userRepository.save(admin);
+
+        CustomUserDetails userDetails = new CustomUserDetails(admin);
+        return jwtUtils.generateToken(userDetails);
     }
 }

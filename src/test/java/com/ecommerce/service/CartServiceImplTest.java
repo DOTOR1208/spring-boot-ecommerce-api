@@ -179,7 +179,7 @@ class CartServiceImplTest {
 
         assertNotNull(result);
         assertEquals(1, sampleCart.getCartItems().size());
-        assertEquals(3, existingItem.getQuantity()); // 2 + 1 = 3
+        assertEquals(3, existingItem.getQuantity());
         verify(cartItemRepository, times(1)).save(existingItem);
     }
 
