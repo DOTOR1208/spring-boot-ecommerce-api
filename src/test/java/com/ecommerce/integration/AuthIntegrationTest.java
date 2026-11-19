@@ -45,7 +45,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         Optional<User> persisted = userRepository.findByUserName("alice_integration");
         assertThat(persisted).isPresent();
         assertThat(persisted.get().getEmail()).isEqualTo("alice_integration@example.com");
-        assertThat(persisted.get().getCart()).isNotNull(); // User should have an auto-created cart
+        assertThat(persisted.get().getCart()).isNotNull();
     }
 
     @Test
@@ -61,7 +61,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
         SignUpRequest duplicateUser = SignUpRequest.builder()
                 .name("Bob Second")
-                .userName("bob_duplicate") // duplicate username
+                .userName("bob_duplicate")
                 .email("bob_second@example.com")
                 .password("Password123!")
                 .build();

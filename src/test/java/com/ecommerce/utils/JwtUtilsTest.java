@@ -25,7 +25,7 @@ import io.jsonwebtoken.JwtException;
 class JwtUtilsTest {
 
     private static final String TEST_SECRET = "ZEdocGMwbHpRVVJsZG1Wc2IzQnRaVzUwUzJWNVJtOXlURzlqWVd4VVpYTjBhVzVuVDI1c2VVNXZkRVp2Y2xCeWIyUjFZM1JwYjI0eE1qTTBOUT09";
-    private static final long TEST_DURATION = 3600L; // 1 hour
+    private static final long TEST_DURATION = 3600L;
 
     private JwtUtils jwtUtils;
     private CustomUserDetails userDetails;
