@@ -1,69 +1,142 @@
 # Spring Boot E-Commerce REST API
 
-A RESTful backend service for an e-commerce platform built with Spring Boot 3, Spring Security 6, and MySQL. It handles user authentication with JWT, product catalog management, shopping cart operations, and transactional order checkout with inventory validation.
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.0-green.svg?style=flat-square&logo=springsecurity)](https://spring.io/projects/spring-security)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg?style=flat-square&logo=mysql)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED.svg?style=flat-square&logo=docker)](https://www.docker.com/)
+[![Testcontainers](https://img.shields.io/badge/Testcontainers-MySQL%20Docker-blueviolet.svg?style=flat-square&logo=testcontainers)](https://testcontainers.com/)
+[![Tests](https://img.shields.io/badge/Tests-188%20Passed-success.svg?style=flat-square&logo=junit5)](https://junit.org/junit5/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF.svg?style=flat-square&logo=githubactions)](https://github.com/features/actions)
+
+A RESTful backend service for an e-commerce platform built with Spring Boot 3, Spring Security 6, and MySQL 8.0. The system provides stateless JWT authentication, Role-Based Access Control (RBAC), Anti-IDOR authorization checks, compile-time DTO mappings via MapStruct, and atomic transactional checkout with inventory validation.
+
+The project features a 5-tier testing suite comprising **188 automated tests**, verified against an isolated MySQL 8.0 Docker container using Testcontainers.
 
 ---
 
 ## Tech Stack
 
-- **Framework**: Spring Boot 3.4.5 (Spring MVC, Spring Data JPA, Spring Security, Validation)
-- **Language**: Java 17
-- **Database**: MySQL 8.0 with HikariCP connection pooling
-- **Security**: Spring Security 6, JJWT 0.12.6, BCrypt
-- **Mapping & Utilities**: MapStruct 1.6.3, Project Lombok
-- **Containerization**: Docker, Docker Compose
-- **Build Tool**: Maven Wrapper (`mvnw`)
+| Category | Technology | Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Language** | Java (OpenJDK) | 17 LTS | Core programming language |
+| **Framework** | Spring Boot | 3.4.5 | Web MVC, Data JPA, Security, Validation |
+| **Database** | MySQL | 8.0 | Primary relational database |
+| **Connection Pool** | HikariCP | Default | High-performance JDBC connection pooling |
+| **Security** | Spring Security, JJWT | 6.0 / 0.12.6 | Stateless JWT authentication, BCrypt, RBAC |
+| **Mapping** | MapStruct | 1.6.3 | Compile-time, type-safe entity-DTO mapper |
+| **Testing** | JUnit 5, Mockito, AssertJ | Latest | Unit, security, and slice testing |
+| **Integration Test** | Testcontainers | 1.20.6 | Real MySQL 8.0 Docker container integration |
+| **Containerization** | Docker, Docker Compose | Multi-Stage | Zero-setup local container deployment |
+| **CI/CD** | GitHub Actions | Workflows | Automated test pipeline on push and pull request |
 
 ---
 
-## Key Features & Design Decisions
+## Testing Suite (188 Tests)
 
-### 1. Authentication & Role-Based Access Control (RBAC)
-- **Stateless Authentication**: Uses JWT (JSON Web Tokens) with HMAC-SHA512 signature. The filter chain (`JwtAuthenticationFilter`) validates the token on each request and populates the `SecurityContext`.
-- **Role Enforcement**: Protected routes check permissions via `@PreAuthorize("hasRole('ADMIN')")` or SecurityFilterChain URL matching (`/api/auth/**` and `GET /api/products/**` are public).
-- **Graceful Error Handling**: Custom `AuthenticationEntryPoint` and `AccessDeniedHandler` return standardized JSON error envelopes instead of default HTML error pages.
+The test suite follows the Testing Pyramid methodology, covering database slice queries, domain services, security filter lifecycle, web controllers, and containerized integration flows.
 
-### 2. DTO-First Architecture
-- JPA entities are never exposed directly to controllers. All client requests and responses use dedicated DTOs (`request/` and `response/`).
-- **MapStruct** generates type-safe object mappings at compile-time, avoiding reflection overhead while preventing entity leakage and lazy loading serialization issues.
+| Layer | Scope | Technology | Tests | Status |
+| :--- | :--- | :--- | :---: | :---: |
+| **Layer 0: Repository Slice** | Custom derived queries, entity mapping, soft-delete filtering, pagination | Spring Data JPA, H2, AssertJ | **50** | Passed |
+| **Layer 1: Service Unit Tests** | Business rules, stock checks, cart calculations, exception propagation | JUnit 5, Mockito | **63** | Passed |
+| **Layer 2: Security & Utility** | HMAC-SHA512 signing, expiration handling, signature tampering, BCrypt hashing | JJWT 0.12.6, Spring Security Crypto | **21** | Passed |
+| **Layer 3: Controller Slice** | HTTP payload binding, `@Valid` constraints, status codes, `@PreAuthorize` | `@WebMvcTest`, MockMvc | **39** | Passed |
+| **Layer 4: Full Integration** | End-to-end user journeys against MySQL 8.0 (Auth, Catalog, Cart, Checkout) | `@SpringBootTest`, Testcontainers | **15** | Passed |
+| **TOTAL** | **Full Project Test Suite** | | **188** | **Passed** |
 
-### 3. Shopping Cart & Inventory Management
-- Carts are tied to individual user accounts.
-- Adding existing items to the cart automatically increments item quantities.
-- Stock availability is verified prior to cart additions.
+### Testcontainers Singleton Container Pattern
+Integration tests share a single container lifecycle to minimize startup overhead:
+- A singleton `mysql:8.0.36` container is managed statically in `BaseIntegrationTest`.
+- Shared across integration test classes (`AuthIntegrationTest`, `ProductCatalogIntegrationTest`, `OrderCheckoutIntegrationTest`) using dynamic port mapping via `@DynamicPropertySource`.
+- Configured via `docker-java.properties` (`api.version=1.44`) to support Docker Desktop on Windows and Linux CI runners.
 
-### 4. Transactional Order Checkout
-- Order checkout is handled in a single `@Transactional` method (`OrderServiceImpl.checkout`):
-  - Validates cart contents and checks live product stock.
-  - Decrements product inventory atomically.
-  - Snapshots current unit prices into `OrderItem.priceAtOrderTime` so historical orders remain unaffected by future product price changes.
-  - Clears the user's cart upon successful order creation.
+### Test Execution Commands
+```powershell
+# Run all 188 tests
+.\mvnw.cmd test
+
+# Run only Full Integration tests
+.\mvnw.cmd test "-Dtest=*IntegrationTest"
+
+# Run only Service Unit tests
+.\mvnw.cmd test "-Dtest=*ServiceImplTest"
+
+# Run only Repository Slice tests
+.\mvnw.cmd test "-Dtest=*RepositoryTest"
+```
+
+---
+
+## Core Engineering & Security Features
+
+### 1. Stateless Authentication & Role-Based Access Control (RBAC)
+- Stateless authentication using JWT signed with HMAC-SHA512.
+- Role-based authorization enforced via method-level annotations (`@PreAuthorize("hasRole('ADMIN')")`) and URL security matchers.
+- Public read access for product catalog endpoints without requiring authentication.
+
+### 2. Anti-IDOR Authorization
+- Enforces strict resource ownership verification on order endpoints (`/api/orders/{id}`).
+- Regular users cannot inspect or access orders belonging to other accounts.
+- Administrators retain elevated privileges to inspect all orders for auditing.
+
+### 3. Atomic Checkout & Inventory Validation
+The checkout workflow executes within a single `@Transactional` method (`OrderServiceImpl.checkout`):
+- **Stock Check**: Validates requested cart quantities against live inventory.
+- **Stock Decrement**: Deducts product stock in the database.
+- **Price Snapshot**: Saves unit prices at purchase time into `OrderItem.priceAtOrderTime`, isolating historical orders from subsequent price changes.
+- **Cart Cleanup**: Flushes active cart items upon order completion.
+- **Rollback Guarantee**: In case of insufficient stock or system errors, the transaction rolls back completely—no partial records are created.
+
+### 4. DTO-First Architecture with MapStruct
+- Prevents entity leakage and circular reference serialization issues.
+- MapStruct generates type-safe object mappers at compile time, eliminating reflection overhead.
 
 ### 5. Soft Delete & Relational Integrity
-- Critical domain entities (`User`, `Product`) use soft deletion (`deleted` flag) to prevent broken foreign key references in historical order records.
+- Primary domain entities (`User`, `Product`) utilize soft deletion (`deleted = true`) to prevent foreign key violations in completed order histories.
 
-### 6. Unified Response Envelope & Exception Handling
-- All endpoints wrap responses in a standard `SuccessResponse<T>` format, including pagination metadata (`page`, `size`, `totalElements`, `totalPages`) for paged queries.
-- Business and validation errors are handled by `@RestControllerAdvice` (`GlobalExceptionHandler`), returning consistent `ErrorResponse` objects with domain context and field validation details.
+### 6. Standardized Response Envelope
+All controller endpoints return a standardized envelope for consistency across consumers:
+- Success: `SuccessResponse<T>` with optional pagination metadata.
+- Error: `ErrorResponse` handled via `@RestControllerAdvice` (`GlobalExceptionHandler`).
+
+---
+
+## Domain Model & Entity Relationships
+
+- **User & Role**: Many-to-Many association (`users_roles`). Users hold encrypted credentials, account status flags, and an auto-initialized shopping cart.
+- **Product**: Catalog item with attributes including name, category, price, available stock, and soft-delete status.
+- **Cart & CartItem**: One-to-One mapping between User and Cart. Cart items reference products with requested quantities, verified against real-time inventory.
+- **Orders & OrderItem**: One-to-Many relation representing finalised purchases. Each `OrderItem` captures the snapshot unit price (`priceAtOrderTime`) and quantity.
 
 ---
 
 ## Project Structure
 
 ```text
-src/main/java/com/ecommerce/
-├── controller/         # REST endpoints (Auth, Product, Cart, Order, User)
-├── service/            # Business interfaces & transactional implementations
-│   └── impl/
-├── repository/         # Spring Data JPA repositories with derived queries
-├── model/              # JPA Entities (User, Role, Product, Cart, CartItem, Orders, OrderItem)
-├── dto/                # Request validation payloads and Response representations
-│   ├── request/
-│   └── response/
-├── mapper/             # MapStruct compile-time mappers
-├── security/           # Filter chain, JWT provider, UserDetailsService, auth entry points
-├── exception/          # Custom exceptions (ResourceNotFound, BadRequest) & GlobalExceptionHandler
-└── utils/              # JWT signing, claims extraction, and validation helpers
+src/
+├── main/java/com/ecommerce/
+│   ├── constant/           # Constants and SecurityRole definitions
+│   ├── controller/         # REST Controllers (Auth, Product, Cart, Order, User)
+│   ├── dto/                # Request & Response DTO records and classes
+│   │   ├── request/
+│   │   └── response/
+│   ├── exception/          # Custom business exceptions & GlobalExceptionHandler
+│   ├── mapper/             # MapStruct compile-time mappers
+│   ├── model/              # JPA domain entities (User, Product, Cart, Orders, etc.)
+│   ├── repository/         # Spring Data JPA repositories with derived queries
+│   ├── response/           # Unified API response envelope wrappers
+│   ├── security/           # Filter chain, CustomUserDetails, JWT filter, Entry points
+│   ├── service/            # Business interfaces & transactional implementations
+│   │   └── impl/
+│   └── utils/              # JWT signing, claims extraction, and validation helpers
+└── test/java/com/ecommerce/
+    ├── controller/         # Layer 3: WebMvc slice tests (MockMvc)
+    ├── integration/        # Layer 4: Full integration tests (Testcontainers MySQL)
+    ├── repository/         # Layer 0: DataJpaTest slice tests (H2)
+    ├── security/           # Layer 2: Security & authorization tests
+    ├── service/            # Layer 1: Service unit tests (Mockito)
+    └── utils/              # Layer 2: JWT & crypto utility tests
 ```
 
 ---
@@ -71,74 +144,73 @@ src/main/java/com/ecommerce/
 ## API Endpoints Reference
 
 ### Authentication (`/api/auth`)
-| Method | Path | Auth | Description |
+| Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/signup` | Public | Register a new user (`ROLE_USER`) |
-| `POST` | `/api/auth/signin` | Public | Authenticate credentials and receive a JWT token |
+| `POST` | `/api/auth/signup` | Public | Register a new user account (`ROLE_USER`) |
+| `POST` | `/api/auth/signin` | Public | Authenticate credentials and return JWT token |
 
 ### Products (`/api/products`)
-| Method | Path | Auth | Description |
+| Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/products` | Public | List products (paginated, or `unpaged=true`) |
 | `GET` | `/api/products/{id}` | Public | Get product details by ID |
 | `GET` | `/api/products/search?name=...` | Public | Search products by name (paginated) |
 | `POST` | `/api/products` | Admin | Create a new product |
-| `PUT` | `/api/products/{id}` | Admin | Update product information |
+| `PUT` | `/api/products/{id}` | Admin | Update product details |
 | `DELETE` | `/api/products/{id}` | Admin | Soft delete a product |
 
 ### Cart (`/api/cart`)
-| Method | Path | Auth | Description |
+| Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/cart` | User | Get current user's shopping cart |
 | `POST` | `/api/cart/items` | User | Add item to cart or increment quantity |
-| `PUT` | `/api/cart/items/{productId}` | User | Update item quantity directly (removes if quantity <= 0) |
+| `PUT` | `/api/cart/items/{productId}` | User | Update item quantity (removes if quantity <= 0) |
 | `DELETE` | `/api/cart/items/{productId}` | User | Remove an item from the cart |
-| `DELETE` | `/api/cart` | User | Clear entire cart |
+| `DELETE` | `/api/cart` | User | Clear entire shopping cart |
 
 ### Orders (`/api/orders`)
-| Method | Path | Auth | Description |
+| Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/orders/checkout` | User | Checkout active cart and generate order |
-| `GET` | `/api/orders` | User | View order history summaries for current user |
-| `GET` | `/api/orders/{orderId}` | User / Admin | View order details (owner or admin only) |
+| `POST` | `/api/orders/checkout` | User | Execute atomic checkout on active cart |
+| `GET` | `/api/orders` | User | View order history for authenticated user |
+| `GET` | `/api/orders/{orderId}` | User / Admin | View order details (Owner or Admin only) |
 
 ### Users (`/api/users`)
-| Method | Path | Auth | Description |
+| Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/users/me` | User | View current authenticated user's profile |
-| `PUT` | `/api/users/me` | User | Update current authenticated user's profile |
-| `PUT` | `/api/users/change-password` | User | Change password (verifies current password) |
+| `GET` | `/api/users/me` | User | View current authenticated user profile |
+| `PUT` | `/api/users/me` | User | Update current authenticated user profile |
+| `PUT` | `/api/users/change-password` | User | Change user password (validates current password) |
 | `GET` | `/api/users` | Admin | List all registered users (paginated) |
 | `GET` | `/api/users/{id}` | Admin | Get user profile by ID |
-| `PUT` | `/api/users/{id}` | Admin | Update user information |
-| `DELETE` | `/api/users/{id}` | Admin | Soft delete user account |
-| `PUT` | `/api/users/{id}/restore` | Admin | Restore / reactivate a soft-deleted user account |
-| `GET` | `/api/users/search?keyword=...` | Admin | Search users by keyword |
+| `PUT` | `/api/users/{id}` | Admin | Update user details |
+| `DELETE` | `/api/users/{id}` | Admin | Soft delete a user account |
+| `PUT` | `/api/users/{id}/restore` | Admin | Restore a soft-deleted user account |
+| `GET` | `/api/users/search?keyword=...` | Admin | Search users by keyword (paginated) |
 
 ---
 
 ## Response Format
 
-### Success Response
+### Success Response (`200 OK`)
 ```json
 {
-  "timestamp": "2026-10-27T15:00:00Z",
-  "status": 200,
+  "timestamp": "2026-11-19T19:30:00Z",
+  "operationType": "SUCCESS",
   "data": {
-    "id": 1,
-    "productName": "Mechanical Keyboard",
-    "price": 89.99,
-    "stock": 50
+    "orderId": 1,
+    "totalPrice": 300.0,
+    "status": "COMPLETED"
   },
   "pagination": null
 }
 ```
 
-### Paginated Response
+### Paginated Response (`200 OK`)
 ```json
 {
-  "timestamp": "2026-10-27T15:00:00Z",
-  "status": 200,
+  "timestamp": "2026-11-19T19:30:00Z",
+  "operationType": "SUCCESS",
   "data": [ ... ],
   "pagination": {
     "page": 0,
@@ -149,12 +221,11 @@ src/main/java/com/ecommerce/
 }
 ```
 
-### Error Response
+### Error Response (`400 Bad Request` / `403 Forbidden` / `404 Not Found`)
 ```json
 {
-  "timestamp": "2026-10-27T15:00:00Z",
-  "status": 404,
-  "error": "Not Found",
+  "timestamp": "2026-11-19T19:30:00Z",
+  "operationType": "FAILURE",
   "code": "RESOURCE_NOT_FOUND",
   "domain": "product",
   "message": "Product not found with id: 99",
@@ -164,24 +235,30 @@ src/main/java/com/ecommerce/
 
 ---
 
-## Local Setup
+## Getting Started
 
-### Requirements
-- **JDK 17** or higher
-- **MySQL 8.0+**
+### Prerequisites
+- JDK 17 or higher
+- Docker Desktop (for Docker Compose and Testcontainers)
+- MySQL 8.0+ (if running without Docker)
 
-### Configuration
-Update the database connection details in `src/main/resources/application.properties`:
+### Option 1: Docker Compose (Multi-Stage Build — Recommended)
+```powershell
+# Build and start all services
+docker compose up --build -d
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db?createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=your_password
-server.port=8081
+# Check container status
+docker compose ps
+
+# View application logs
+docker compose logs -f app
+
+# Stop containers
+docker compose down
 ```
+The API will be available at `http://localhost:8081`.
 
-### Running the Application
-
+### Option 2: Run Locally with Maven
 ```powershell
 # Windows
 .\mvnw.cmd spring-boot:run
@@ -190,31 +267,10 @@ server.port=8081
 ./mvnw spring-boot:run
 ```
 
-The application runs on `http://localhost:8081`.
-
-### Running with Docker (Recommended - Multi-Stage Zero-Setup)
-
-Thanks to the **Multi-Stage Dockerfile**, you do **not** need Java or Maven installed on your host machine. Docker automatically compiles the source code inside an isolated Maven container and packages the final app into a lightweight JRE runtime container.
-
-1. **Start all containers via Docker Compose**:
-   ```powershell
-   docker compose up --build -d
-   ```
-
-2. **Check container status**:
-   ```powershell
-   docker compose ps
-   ```
-
-4. **Stop containers**:
-   ```powershell
-   docker compose down
-   ```
-
 ---
 
-### Running Tests
-
-```powershell
-.\mvnw.cmd test
-```
+## CI/CD Pipeline
+Continuous Integration is configured via **GitHub Actions** (`.github/workflows/maven.yml`):
+- Triggers on pull requests and pushes to `main`.
+- Environment: `ubuntu-latest` with Temurin JDK 17 and Maven caching.
+- Executes full test suite (`mvn clean test -B`), with automated Testcontainers provisioning on the runner.
