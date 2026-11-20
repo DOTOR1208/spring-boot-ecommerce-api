@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.dto.request.ProductRequestDto;
 import com.ecommerce.dto.response.ProductResponseDto;
-import com.ecommerce.response.SuccessResponse;
+import com.ecommerce.envelope.SuccessResponse;
 import com.ecommerce.service.ProductService;
 
 import jakarta.validation.Valid;

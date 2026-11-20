@@ -1,6 +1,6 @@
 package com.ecommerce.exception;
 
-import com.ecommerce.response.ErrorCode;
+import com.ecommerce.envelope.ErrorCode;
 
 import lombok.Getter;
 

@@ -7,8 +7,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import com.ecommerce.response.ErrorCode;
-import com.ecommerce.response.ErrorResponse;
+import com.ecommerce.envelope.ErrorCode;
+import com.ecommerce.envelope.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;

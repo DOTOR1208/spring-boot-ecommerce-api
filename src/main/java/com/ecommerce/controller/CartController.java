@@ -14,7 +14,7 @@ import com.ecommerce.dto.request.CartRequestDto;
 import com.ecommerce.dto.request.UpdateCartItemRequest;
 import com.ecommerce.dto.response.CartResponseDto;
 import com.ecommerce.model.User;
-import com.ecommerce.response.SuccessResponse;
+import com.ecommerce.envelope.SuccessResponse;
 import com.ecommerce.security.CustomUserDetails;
 import com.ecommerce.service.CartService;
 import com.ecommerce.service.UserService;

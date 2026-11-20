@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ecommerce.dto.request.ChangePasswordRequest;
 import com.ecommerce.dto.request.UserRequestDto;
 import com.ecommerce.dto.response.UserResponseDto;
-import com.ecommerce.response.SuccessResponse;
+import com.ecommerce.envelope.SuccessResponse;
 import com.ecommerce.security.CustomUserDetails;
 import com.ecommerce.service.UserService;
 

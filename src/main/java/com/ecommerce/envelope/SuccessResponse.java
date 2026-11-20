@@ -1,4 +1,4 @@
-package com.ecommerce.response;
+package com.ecommerce.envelope;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
