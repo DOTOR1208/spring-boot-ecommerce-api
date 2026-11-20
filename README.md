@@ -6,12 +6,9 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg?style=flat-square&logo=mysql)](https://www.mysql.com/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED.svg?style=flat-square&logo=docker)](https://www.docker.com/)
 [![Testcontainers](https://img.shields.io/badge/Testcontainers-MySQL%20Docker-blueviolet.svg?style=flat-square&logo=testcontainers)](https://testcontainers.com/)
-[![Tests](https://img.shields.io/badge/Tests-188%20Passed-success.svg?style=flat-square&logo=junit5)](https://junit.org/junit5/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF.svg?style=flat-square&logo=githubactions)](https://github.com/features/actions)
 
 A RESTful backend service for an e-commerce platform built with Spring Boot 3, Spring Security 6, and MySQL 8.0. The system provides stateless JWT authentication, Role-Based Access Control (RBAC), Anti-IDOR authorization checks, compile-time DTO mappings via MapStruct, and atomic transactional checkout with inventory validation.
-
-The project features a 5-tier testing suite comprising **188 automated tests**, verified against an isolated MySQL 8.0 Docker container using Testcontainers.
 
 ---
 
@@ -36,13 +33,13 @@ The project features a 5-tier testing suite comprising **188 automated tests**, 
 
 The test suite follows the Testing Pyramid methodology, covering database slice queries, domain services, security filter lifecycle, web controllers, and containerized integration flows.
 
-| Layer | Scope | Technology | Tests | Status |
+| Test Type | Scope | Technology | Tests | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| **Layer 0: Repository Slice** | Custom derived queries, entity mapping, soft-delete filtering, pagination | Spring Data JPA, H2, AssertJ | **50** | Passed |
-| **Layer 1: Service Unit Tests** | Business rules, stock checks, cart calculations, exception propagation | JUnit 5, Mockito | **63** | Passed |
-| **Layer 2: Security & Utility** | HMAC-SHA512 signing, expiration handling, signature tampering, BCrypt hashing | JJWT 0.12.6, Spring Security Crypto | **21** | Passed |
-| **Layer 3: Controller Slice** | HTTP payload binding, `@Valid` constraints, status codes, `@PreAuthorize` | `@WebMvcTest`, MockMvc | **39** | Passed |
-| **Layer 4: Full Integration** | End-to-end user journeys against MySQL 8.0 (Auth, Catalog, Cart, Checkout) | `@SpringBootTest`, Testcontainers | **15** | Passed |
+| **Repository Slice Tests** | Custom derived queries, entity mapping, soft-delete filtering, pagination | Spring Data JPA, H2, AssertJ | **50** | Passed |
+| **Service Unit Tests** | Business rules, stock checks, cart calculations, exception propagation | JUnit 5, Mockito | **63** | Passed |
+| **Security & Utility Tests** | HMAC-SHA512 signing, expiration handling, signature tampering, BCrypt hashing | JJWT 0.12.6, Spring Security Crypto | **21** | Passed |
+| **Controller Slice Tests** | HTTP payload binding, `@Valid` constraints, status codes, `@PreAuthorize` | `@WebMvcTest`, MockMvc | **39** | Passed |
+| **Full Integration Tests** | End-to-end user journeys against MySQL 8.0 (Auth, Catalog, Cart, Checkout) | `@SpringBootTest`, Testcontainers | **15** | Passed |
 | **TOTAL** | **Full Project Test Suite** | | **188** | **Passed** |
 
 ### Testcontainers Singleton Container Pattern
@@ -125,18 +122,18 @@ src/
 │   ├── mapper/             # MapStruct compile-time mappers
 │   ├── model/              # JPA domain entities (User, Product, Cart, Orders, etc.)
 │   ├── repository/         # Spring Data JPA repositories with derived queries
-│   ├── response/           # Unified API response envelope wrappers
+│   ├── envelope/           # Unified API response envelope wrappers (SuccessResponse, ErrorResponse)
 │   ├── security/           # Filter chain, CustomUserDetails, JWT filter, Entry points
 │   ├── service/            # Business interfaces & transactional implementations
 │   │   └── impl/
 │   └── utils/              # JWT signing, claims extraction, and validation helpers
 └── test/java/com/ecommerce/
-    ├── controller/         # Layer 3: WebMvc slice tests (MockMvc)
-    ├── integration/        # Layer 4: Full integration tests (Testcontainers MySQL)
-    ├── repository/         # Layer 0: DataJpaTest slice tests (H2)
-    ├── security/           # Layer 2: Security & authorization tests
-    ├── service/            # Layer 1: Service unit tests (Mockito)
-    └── utils/              # Layer 2: JWT & crypto utility tests
+    ├── controller/         # WebMvc slice tests (MockMvc)
+    ├── integration/        # Full integration tests (Testcontainers MySQL)
+    ├── repository/         # DataJpaTest slice tests (H2)
+    ├── security/           # Security & authorization tests
+    ├── service/            # Service unit tests (Mockito)
+    └── utils/              # JWT & crypto utility tests
 ```
 
 ---
