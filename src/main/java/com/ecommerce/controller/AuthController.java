@@ -9,7 +9,7 @@ import com.ecommerce.dto.request.SignInRequest;
 import com.ecommerce.dto.request.SignUpRequest;
 import com.ecommerce.dto.response.SignInResponse;
 import com.ecommerce.dto.response.UserResponseDto;
-import com.ecommerce.response.SuccessResponse;
+import com.ecommerce.envelope.SuccessResponse;
 import com.ecommerce.service.AuthService;
 
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.ecommerce.response;
+package com.ecommerce.envelope;
 
 public enum OperationType {
     SUCCESS,

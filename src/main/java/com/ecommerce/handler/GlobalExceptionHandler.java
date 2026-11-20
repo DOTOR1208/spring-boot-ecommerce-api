@@ -22,8 +22,8 @@ import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.BaseException;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.exception.UserAlreadyExistException;
-import com.ecommerce.response.ErrorCode;
-import com.ecommerce.response.ErrorResponse;
+import com.ecommerce.envelope.ErrorCode;
+import com.ecommerce.envelope.ErrorResponse;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
